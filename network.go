@@ -42,14 +42,14 @@ func NewNetwork() *Network {
 	go func() {
 		for {
 			data := []byte{}
-			_, error := connection.Read(data)
+			_, senderAddress, error := connection.ReadFromUDP(data)
 
 			if error != nil {
 				log.Fatal(error)
 			}
 
 			if len(data) > 0 {
-				network.handleNetworkData(data)
+				network.handleNetworkData(senderAddress, data)
 			}
 		}
 	}()
@@ -57,7 +57,7 @@ func NewNetwork() *Network {
 	return &network
 }
 
-func (network *Network) handleNetworkData(data []byte) {
+func (network *Network) handleNetworkData(senderAddress *net.UDPAddr, data []byte) {
 	if data[0] == networkVersion {
 		messageType := data[1]
 		magicValue := binary.LittleEndian.Uint64(data[2:10])
@@ -65,7 +65,7 @@ func (network *Network) handleNetworkData(data []byte) {
 		if messageType == ResponsePing || messageType == ResponseStore || messageType == ResponseFindNode || messageType == ResponseFindValue {
 			network.handleNetworkDataResponse(messageType, magicValue, data)
 		} else {
-			network.handleNetworkDataRequest(messageType, magicValue, data)
+			network.handleNetworkDataRequest(senderAddress, messageType, magicValue, data)
 		}
 	}
 }
@@ -97,8 +97,17 @@ func (network *Network) handleNetworkDataResponse(messageType byte, magicValue u
 	response.mutex.Unlock()
 }
 
-func (network *Network) handleNetworkDataRequest(messageType byte, magicValue uint64, data []byte) {
-	//TODO
+func (network *Network) handleNetworkDataRequest(senderAddress *net.UDPAddr, messageType byte, magicValue uint64, data []byte) {
+	switch messageType {
+	case MessagePing:
+		network.SendMessageResponse(senderAddress, ResponsePing, magicValue, func(buffer *bytes.Buffer){})
+	case MessageStore:
+		//TODO
+	case MessageFindNode:
+		//TODO
+	case MessageFindValue:
+		//TODO
+	}
 }
 
 func dataToContacts(data []byte) []Contact {
@@ -113,6 +122,28 @@ func dataToContacts(data []byte) []Contact {
 	}
 
 	return contacts
+}
+
+func (network *Network) SendMessageResponse(address *net.UDPAddr, messageType byte, magicValue uint64, writeData func(*bytes.Buffer)) {
+	buffer := new(bytes.Buffer)
+
+	//Version
+	buffer.WriteByte(networkVersion)
+
+	//Message type
+	buffer.WriteByte(messageType)
+
+	//Magic value
+	error := binary.Write(buffer, binary.LittleEndian, magicValue)
+	if error != nil {
+		log.Fatal(error)
+	}
+
+	//Write custom data
+	writeData(buffer)
+
+	//Send data
+	network.connection.WriteToUDP(buffer.Bytes(), address)
 }
 
 func (network *Network) SendMessage(contact *Contact, messageType byte, writeData func(*bytes.Buffer)) *NetworkResponse {

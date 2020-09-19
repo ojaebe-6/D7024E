@@ -115,7 +115,7 @@ func dataToContacts(data []byte) []Contact {
 	return contacts
 }
 
-func (network *Network) SendMessage(contact *Contact, messageType byte, writeData func(bytes.Buffer)) *NetworkResponse {
+func (network *Network) SendMessage(contact *Contact, messageType byte, writeData func(*bytes.Buffer)) *NetworkResponse {
 	buffer := new(bytes.Buffer)
 
 	//Version
@@ -135,6 +135,9 @@ func (network *Network) SendMessage(contact *Contact, messageType byte, writeDat
 	if error2 != nil {
 		log.Fatal(error2)
 	}
+
+	//Write custom data
+	writeData(buffer)
 
 	//Send data
 	network.connection.WriteToUDP(buffer.Bytes(), &net.UDPAddr{IP:net.ParseIP(contact.Address), Port:standardPort, Zone:""})
@@ -178,7 +181,7 @@ func (network *Network) SendMessage(contact *Contact, messageType byte, writeDat
 }
 
 func (network *Network) SendPingMessage(contact *Contact) bool {
-	response := network.SendMessage(contact, MessagePing, func(buffer bytes.Buffer){})
+	response := network.SendMessage(contact, MessagePing, func(buffer *bytes.Buffer){})
 
 	if response != nil {
 		//Success
@@ -190,7 +193,7 @@ func (network *Network) SendPingMessage(contact *Contact) bool {
 }
 
 func (network *Network) SendFindContactMessage(contact *Contact, id *KademliaID) (bool, []Contact) {
-	response := network.SendMessage(contact, MessageFindNode, func(buffer bytes.Buffer) {
+	response := network.SendMessage(contact, MessageFindNode, func(buffer *bytes.Buffer) {
 		for _, b := range id {
 			buffer.WriteByte(b)
 		}
@@ -206,7 +209,7 @@ func (network *Network) SendFindContactMessage(contact *Contact, id *KademliaID)
 }
 
 func (network *Network) SendFindDataMessage(contact *Contact, hash string) (bool, []Contact, []byte) {
-	response := network.SendMessage(contact, MessageFindValue, func(buffer bytes.Buffer) {
+	response := network.SendMessage(contact, MessageFindValue, func(buffer *bytes.Buffer) {
 		buffer.WriteString(hash)
 	})
 
@@ -225,7 +228,7 @@ func (network *Network) SendFindDataMessage(contact *Contact, hash string) (bool
 }
 
 func (network *Network) SendStoreMessage(contact *Contact, data []byte) bool {
-	response := network.SendMessage(contact, MessageStore, func(buffer bytes.Buffer) {
+	response := network.SendMessage(contact, MessageStore, func(buffer *bytes.Buffer) {
 		buffer.Write(data)
 	})
 

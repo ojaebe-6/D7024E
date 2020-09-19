@@ -2,25 +2,14 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"net"
 	"strconv"
 )
 
 func main() {
-	var nodePort int
-	if len(os.Args) > 1 {
-		port, error := strconv.Atoi(os.Args[1])
-		if error != nil {
-			port = 20000
-		}
-		nodePort = port
-	} else {
-		nodePort = 20000
-	}
-	network := Listen("0.0.0.0", nodePort)
+	network := NewNetwork()
 
-	fmt.Println("Node initalized on port ", nodePort , "!");
+	fmt.Println("Node initalized on port 20000!");
 
 	go func() {
 		buffer := make([]byte, 256)

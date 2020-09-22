@@ -116,8 +116,8 @@ func dataToContacts(data []byte) []Contact {
 	contacts := make([]Contact, len(data) / contactDataLength)
 
 	for i := 0; i < len(data); i += contactDataLength {
-		id := NewKademliaIDFromBytes(data[i * contactDataLength:i * contactDataLength + IDLength])
 		address := "0.0.0.0"//TODO
+		id := NewKademliaIDFromBytes(data[i:i + IDLength])
 		contacts[i] = NewContact(id, address)
 	}
 

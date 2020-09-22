@@ -7,7 +7,7 @@ import (
 )
 
 func TestRoutingTable(t *testing.T) {
-	rt := NewRoutingTable(NewContact(NewKademliaID("FFFFFFFF00000000000000000000000000000000"), net.ParseIP("192.168.0.1")))
+	rt := NewRoutingTable(NewKademliaID("FFFFFFFF00000000000000000000000000000000"))
 
 	rt.AddContact(NewContact(NewKademliaID("FFFFFFFF00000000000000000000000000000000"), net.ParseIP("192.168.0.2")))
 	rt.AddContact(NewContact(NewKademliaID("1111111100000000000000000000000000000000"), net.ParseIP("192.168.0.3")))

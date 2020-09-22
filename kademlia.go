@@ -7,14 +7,15 @@ import (
 type Kademlia struct {
   hash_table map[[20]byte][]byte
   sha hash.Hash
+  routing_table *RoutingTable
 }
 
-func NewKademlia() *Kademlia {
-  return &Kademlia{hash_table:make(map[[20]byte][]byte), sha:sha1.New()}
+func NewKademlia(id string, port string) *Kademlia {
+  return &Kademlia{hash_table:make(map[[20]byte][]byte), sha:sha1.New(), routing_table:NewRoutingTable(NewContact(NewKademliaID(id), port))}
 }
 
-func (kademlia *Kademlia) LookupContact(target *Contact) {
-	// TODO
+func (kademlia *Kademlia) LookupContact(target *KademliaID) []Contact {
+	return kademlia.routing_table.FindClosestContacts(target, 20)
 }
 
 func (kademlia *Kademlia) LookupData(hash [20]byte) []byte {

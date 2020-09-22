@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	network := NewNetwork()
+	network := NewNetwork(nil)
 
 	fmt.Println("Node initalized on port 20000!");
 

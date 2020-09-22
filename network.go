@@ -29,15 +29,16 @@ type Network struct {
 	connection *net.UDPConn
 	responses []*NetworkResponse
 	responsesMutex sync.RWMutex
+	kademlia *Kademlia
 }
 
-func NewNetwork() *Network {
+func NewNetwork(kademlia *Kademlia) *Network {
 	connection, error := net.ListenUDP("udp", &net.UDPAddr{IP:nil, Port:standardPort, Zone:""})
 	if error != nil {
 		log.Fatal(error)
 	}
 
-	network := Network{connection:connection, responses:[]*NetworkResponse{}}
+	network := Network{connection:connection, responses:[]*NetworkResponse{}, kademlia:kademlia}
 
 	go func() {
 		for {
@@ -85,13 +86,13 @@ func (network *Network) handleNetworkDataResponse(messageType byte, magicValue u
 	response.answered = true
 	switch messageType {
 	case ResponseFindNode:
-		response.contacts = dataToContacts(data[11:])
+		response.contacts = dataToContacts(data[10:])
 	case ResponseFindValue:
-		isData := (data[11] == 1)
+		isData := (data[10] == 1)
 		if isData {
-			response.data = data[12:]
+			response.data = data[11:]
 		} else {
-			response.contacts = dataToContacts(data[12:])
+			response.contacts = dataToContacts(data[11:])
 		}
 	}
 	response.mutex.Unlock()
@@ -102,11 +103,29 @@ func (network *Network) handleNetworkDataRequest(senderAddress *net.UDPAddr, mes
 	case MessagePing:
 		network.SendMessageResponse(senderAddress, ResponsePing, magicValue, func(buffer *bytes.Buffer){})
 	case MessageStore:
-		//TODO
+		network.kademlia.Store(data[10:])
+		network.SendMessageResponse(senderAddress, ResponseStore, magicValue, func(buffer *bytes.Buffer){})
 	case MessageFindNode:
-		//TODO
+		contacts := network.kademlia.LookupContact(NewKademliaIDFromBytes(data[10:10 + IDLength]))
+		network.SendMessageResponse(senderAddress, ResponseFindNode, magicValue, func(buffer *bytes.Buffer) {
+			buffer.Write(contactsToData(contacts))
+		})
 	case MessageFindValue:
-		//TODO
+		var hash [20]byte
+		copy(hash[:], data[10:10 + 20])
+		data := network.kademlia.LookupData(hash)
+		if data == nil {
+			contacts := network.kademlia.LookupContact(NewKademliaIDFromBytes(data[10:10 + IDLength]))
+			network.SendMessageResponse(senderAddress, ResponseFindValue, magicValue, func(buffer *bytes.Buffer) {
+				buffer.WriteByte(0)
+				buffer.Write(contactsToData(contacts))
+			})
+		} else {
+			network.SendMessageResponse(senderAddress, ResponseFindValue, magicValue, func(buffer *bytes.Buffer) {
+				buffer.WriteByte(1)
+				buffer.Write(data)
+			})
+		}
 	}
 }
 
@@ -122,6 +141,27 @@ func dataToContacts(data []byte) []Contact {
 	}
 
 	return contacts
+}
+
+func contactsToData(contacts []Contact) []byte {
+	const ipAddressLength = 4
+	contactDataLength := IDLength + ipAddressLength
+	data := make([]byte, len(contacts) * contactDataLength)
+
+	for i := 0; i < len(contacts); i++ {
+		//Copy ID
+		for j := 0; j < IDLength; j++ {
+			data[i * contactDataLength + j] = contacts[i].ID[j]
+		}
+
+		//Copy IP
+		data[i * contactDataLength + IDLength + 0] = contacts[i].Address[12]
+		data[i * contactDataLength + IDLength + 1] = contacts[i].Address[13]
+		data[i * contactDataLength + IDLength + 2] = contacts[i].Address[14]
+		data[i * contactDataLength + IDLength + 3] = contacts[i].Address[15]
+	}
+
+	return data
 }
 
 func (network *Network) SendMessageResponse(address *net.UDPAddr, messageType byte, magicValue uint64, writeData func(*bytes.Buffer)) {

@@ -63,10 +63,15 @@ func (network *Network) handleNetworkData(senderAddress *net.UDPAddr, data []byt
 		messageType := data[1]
 		magicValue := binary.LittleEndian.Uint64(data[2:10])
 
+		//Add contact to routing table
+		id := NewKademliaIDFromBytes(data[10:10 + IDLength])
+		contact := NewContact(id, senderAddress.IP)
+		network.kademlia.routing_table.AddContact(contact)
+
 		if messageType == ResponsePing || messageType == ResponseStore || messageType == ResponseFindNode || messageType == ResponseFindValue {
-			network.handleNetworkDataResponse(messageType, magicValue, data)
+			network.handleNetworkDataResponse(messageType, magicValue, data[10 + IDLength:])
 		} else {
-			network.handleNetworkDataRequest(senderAddress, messageType, magicValue, data)
+			network.handleNetworkDataRequest(senderAddress, messageType, magicValue, data[10 + IDLength:])
 		}
 	}
 }
@@ -86,13 +91,13 @@ func (network *Network) handleNetworkDataResponse(messageType byte, magicValue u
 	response.answered = true
 	switch messageType {
 	case ResponseFindNode:
-		response.contacts = dataToContacts(data[10:])
+		response.contacts = dataToContacts(data)
 	case ResponseFindValue:
-		isData := (data[10] == 1)
+		isData := (data[0] == 1)
 		if isData {
-			response.data = data[11:]
+			response.data = data[1:]
 		} else {
-			response.contacts = dataToContacts(data[11:])
+			response.contacts = dataToContacts(data[1:])
 		}
 	}
 	response.mutex.Unlock()
@@ -103,19 +108,19 @@ func (network *Network) handleNetworkDataRequest(senderAddress *net.UDPAddr, mes
 	case MessagePing:
 		network.SendMessageResponse(senderAddress, ResponsePing, magicValue, func(buffer *bytes.Buffer){})
 	case MessageStore:
-		network.kademlia.Store(data[10:])
+		network.kademlia.Store(data)
 		network.SendMessageResponse(senderAddress, ResponseStore, magicValue, func(buffer *bytes.Buffer){})
 	case MessageFindNode:
-		contacts := network.kademlia.LookupContact(NewKademliaIDFromBytes(data[10:10 + IDLength]))
+		contacts := network.kademlia.LookupContact(NewKademliaIDFromBytes(data))
 		network.SendMessageResponse(senderAddress, ResponseFindNode, magicValue, func(buffer *bytes.Buffer) {
 			buffer.Write(contactsToData(contacts))
 		})
 	case MessageFindValue:
 		var hash [20]byte
-		copy(hash[:], data[10:10 + 20])
+		copy(hash[:], data[0:20])
 		data := network.kademlia.LookupData(hash)
 		if data == nil {
-			contacts := network.kademlia.LookupContact(NewKademliaIDFromBytes(data[10:10 + IDLength]))
+			contacts := network.kademlia.LookupContact(NewKademliaIDFromBytes(hash[:]))
 			network.SendMessageResponse(senderAddress, ResponseFindValue, magicValue, func(buffer *bytes.Buffer) {
 				buffer.WriteByte(0)
 				buffer.Write(contactsToData(contacts))
@@ -179,6 +184,9 @@ func (network *Network) SendMessageResponse(address *net.UDPAddr, messageType by
 		log.Fatal(error)
 	}
 
+	//My ID
+	buffer.Write(network.kademlia.myID[:])
+
 	//Write custom data
 	writeData(buffer)
 
@@ -206,6 +214,9 @@ func (network *Network) SendMessage(contact *Contact, messageType byte, writeDat
 	if error2 != nil {
 		log.Fatal(error2)
 	}
+
+	//My ID
+	buffer.Write(network.kademlia.myID[:])
 
 	//Write custom data
 	writeData(buffer)

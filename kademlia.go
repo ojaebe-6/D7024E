@@ -8,10 +8,11 @@ type Kademlia struct {
   hash_table map[[20]byte][]byte
   sha hash.Hash
   routing_table *RoutingTable
+	myID *KademliaID
 }
 
 func NewKademlia(id *KademliaID) *Kademlia {
-  return &Kademlia{hash_table:make(map[[20]byte][]byte), sha:sha1.New(), routing_table:NewRoutingTable(id)}
+  return &Kademlia{hash_table:make(map[[20]byte][]byte), sha:sha1.New(), routing_table:NewRoutingTable(id), myID:id}
 }
 
 func (kademlia *Kademlia) LookupContact(target *KademliaID) []Contact {

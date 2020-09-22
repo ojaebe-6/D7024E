@@ -116,8 +116,8 @@ func dataToContacts(data []byte) []Contact {
 	contacts := make([]Contact, len(data) / contactDataLength)
 
 	for i := 0; i < len(data); i += contactDataLength {
-		address := "0.0.0.0"//TODO
 		id := NewKademliaIDFromBytes(data[i:i + IDLength])
+		address := net.IPv4(data[i + IDLength + 0], data[i + IDLength + 1], data[i + IDLength + 2], data[i + IDLength + 3])
 		contacts[i] = NewContact(id, address)
 	}
 
@@ -171,7 +171,7 @@ func (network *Network) SendMessage(contact *Contact, messageType byte, writeDat
 	writeData(buffer)
 
 	//Send data
-	network.connection.WriteToUDP(buffer.Bytes(), &net.UDPAddr{IP:net.ParseIP(contact.Address), Port:standardPort, Zone:""})
+	network.connection.WriteToUDP(buffer.Bytes(), &net.UDPAddr{IP:contact.Address, Port:standardPort, Zone:""})
 
 	//Add to response waiting list
 	network.responsesMutex.Lock()

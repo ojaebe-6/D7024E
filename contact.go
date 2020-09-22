@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net"
 	"sort"
 )
 
@@ -9,12 +10,12 @@ import (
 // stores the KademliaID, the ip address and the distance
 type Contact struct {
 	ID       *KademliaID
-	Address  string
+	Address  net.IP
 	distance *KademliaID
 }
 
 // NewContact returns a new instance of a Contact
-func NewContact(id *KademliaID, address string) Contact {
+func NewContact(id *KademliaID, address net.IP) Contact {
 	return Contact{id, address, nil}
 }
 
@@ -31,7 +32,7 @@ func (contact *Contact) Less(otherContact *Contact) bool {
 
 // String returns a simple string representation of a Contact
 func (contact *Contact) String() string {
-	return fmt.Sprintf(`contact("%s", "%s")`, contact.ID, contact.Address)
+	return fmt.Sprintf(`contact("%s", "%s")`, contact.ID, contact.Address.String())
 }
 
 // ContactCandidates definition

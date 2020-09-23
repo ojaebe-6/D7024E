@@ -7,6 +7,18 @@ import (
 	"strconv"
 )
 
+//func LookupContact(kademlia *Kademlia, network *Network, target *KademliaID) []Contact {
+	//TODO
+//}
+
+//func LookupData(kademlia *Kademlia, network *Network, hash [20]byte) []byte {
+  //TODO
+//}
+
+//func StoreData(kademlia *Kademlia, network *Network, data []byte) [20]byte {
+  //TODO
+//}
+
 func bootstrap(network *Network, nodeIPs []string) {
 	successfulPing := false
 	for _, stringIP := range nodeIPs {

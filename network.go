@@ -66,7 +66,7 @@ func (network *Network) handleNetworkData(senderAddress *net.UDPAddr, data []byt
 		//Add contact to routing table
 		id := NewKademliaIDFromBytes(data[10:10 + IDLength])
 		contact := NewContact(id, senderAddress.IP)
-		network.kademlia.routing_table.AddContact(contact)
+		network.kademlia.AddContact(&contact)
 
 		if messageType == ResponsePing || messageType == ResponseStore || messageType == ResponseFindNode || messageType == ResponseFindValue {
 			network.handleNetworkDataResponse(messageType, magicValue, data[10 + IDLength:])

@@ -217,7 +217,7 @@ func StoreData(kademlia *Kademlia, network *Network, data []byte, replicationFac
 	return hash
 }
 
-func bootstrap(network *Network, nodeIPs []string) {
+func bootstrap(kademlia *Kademlia, network *Network, nodeIPs []string) {
 	successfulPing := false
 	for _, stringIP := range nodeIPs {
 		ip := net.ParseIP(stringIP)
@@ -238,7 +238,8 @@ func bootstrap(network *Network, nodeIPs []string) {
 	if !successfulPing {
 		fmt.Println("No bootstrap nodes answered. Bootstrap failed");
 	} else {
-		//TODO self lookup
+		//Lookup my ID and add contacts to k-buckets
+		kademlia.AddContacts(LookupContact(kademlia, network, kademlia.myID, bucketSize))
 
 		//Successful bootstrap
 		fmt.Println("Bootstrap successful!");
@@ -251,7 +252,7 @@ func main() {
 
 	fmt.Println("Node initalized on port " + strconv.Itoa(standardPort) + "!");
 
-	bootstrap(network, os.Args)
+	bootstrap(kademlia, network, os.Args)
 
 	//Sleep forever, work done in goroutines
 	select{}

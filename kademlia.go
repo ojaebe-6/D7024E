@@ -23,6 +23,14 @@ func (kademlia *Kademlia) AddContact(contact *Contact) {
 	kademlia.routingTableMutex.Unlock()
 }
 
+func (kademlia *Kademlia) AddContacts(contacts []Contact) {
+	kademlia.routingTableMutex.Lock()
+	for _, contact := range contacts {
+			kademlia.routing_table.AddContact(contact)
+	}
+	kademlia.routingTableMutex.Unlock()
+}
+
 func (kademlia *Kademlia) LookupContact(target *KademliaID) []Contact {
 	kademlia.routingTableMutex.RLock()
 	contacts := kademlia.routing_table.FindClosestContacts(target, 20)

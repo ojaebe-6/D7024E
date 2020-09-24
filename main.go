@@ -4,12 +4,97 @@ import (
 	"fmt"
 	"os"
 	"net"
+	"sort"
 	"strconv"
+	"sync"
+	"time"
 )
 
-//func LookupContact(kademlia *Kademlia, network *Network, target *KademliaID) []Contact {
-	//TODO
-//}
+func LookupContact(kademlia *Kademlia, network *Network, target *KademliaID) *Contact {
+	simultaneousLookups := 3
+	maxLookupsSinceBestFound := 6
+
+	sortContacts := func(contacts []Contact, target *KademliaID) {
+		sort.SliceStable(contacts, func(i, j int) bool {
+			return contacts[i].ID.CalcDistance(target).Less(contacts[j].ID.CalcDistance(target))
+		})
+	}
+
+	var uniqueContacts map[KademliaID]bool
+
+	//Local lookup
+	contacts := kademlia.LookupContact(target);
+	if len(contacts) == 0 {
+		return nil
+	}
+	sortContacts(contacts, target)
+
+	for _, contact := range contacts {
+		uniqueContacts[*contact.ID] = true
+	}
+
+	mutex := sync.Mutex{}
+	bestContact := contacts[0]
+	lookupsSinceBestFound := 0
+	currentLookups := 0
+
+	for i := 0; i < simultaneousLookups; i++ {
+		go func() {
+			for {
+				mutex.Lock()
+				if lookupsSinceBestFound > maxLookupsSinceBestFound || (len(contacts) == 0 && currentLookups == 0) {
+					mutex.Unlock()
+					break
+				}
+
+				if len(contacts) > 0 {
+					contact := contacts[0]
+
+					//Remove first element
+					contacts := contacts[1:]
+
+					currentLookups++
+					mutex.Unlock()
+
+					error, newContacts := network.SendFindContactMessage(&contact, target)
+					mutex.Lock()
+					currentLookups--
+					if !error {
+						kademlia.AddContact(&contact)
+
+						for _, contact := range newContacts {
+							_, exists := uniqueContacts[*contact.ID]
+							if !exists {
+								contacts = append(contacts, contact)
+								uniqueContacts[*contact.ID] = true
+							}
+						}
+						sortContacts(contacts, target)
+
+						if len(contacts) > 0 {
+							if contacts[0].ID.CalcDistance(target).Less(bestContact.ID.CalcDistance(target)) {
+								bestContact = contacts[0]
+								if lookupsSinceBestFound > maxLookupsSinceBestFound {
+									mutex.Unlock()
+									break
+								} else {
+									lookupsSinceBestFound = 0
+								}
+							}
+						}
+						lookupsSinceBestFound++
+					}
+					mutex.Unlock()
+				} else {
+					mutex.Unlock()
+				}
+				time.Sleep(1)
+			}
+		}()
+	}
+
+	return &bestContact
+}
 
 //func LookupData(kademlia *Kademlia, network *Network, hash [20]byte) []byte {
   //TODO

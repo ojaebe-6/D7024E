@@ -109,9 +109,21 @@ func LookupContact(kademlia *Kademlia, network *Network, target *KademliaID, max
   //TODO
 //}
 
-//func StoreData(kademlia *Kademlia, network *Network, data []byte) [20]byte {
-  //TODO
-//}
+func StoreData(kademlia *Kademlia, network *Network, data []byte, replicationFactor int) [20]byte {
+	var hash [20]byte
+  copy(kademlia.sha.Sum(data)[:], hash[0:20])
+
+	target := NewKademliaIDFromBytes(hash[:])
+	contacts := LookupContact(kademlia, network, target, replicationFactor)
+
+	for i := 0; i < replicationFactor; i++ {
+		go func(contact *Contact) {
+			network.SendStoreMessage(contact, data)
+		}(&contacts[i])
+	}
+
+	return hash
+}
 
 func bootstrap(network *Network, nodeIPs []string) {
 	successfulPing := false

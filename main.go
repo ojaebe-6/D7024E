@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func LookupContact(kademlia *Kademlia, network *Network, target *KademliaID) *Contact {
+func LookupContact(kademlia *Kademlia, network *Network, target *KademliaID, maxCount int) []Contact {
 	simultaneousLookups := 3
 	maxLookupsSinceBestFound := 6
 
@@ -28,6 +28,9 @@ func LookupContact(kademlia *Kademlia, network *Network, target *KademliaID) *Co
 		return nil
 	}
 	sortContacts(contacts, target)
+
+	allContacts := make([]Contact, len(contacts))
+	copy(contacts, allContacts)
 
 	for _, contact := range contacts {
 		uniqueContacts[*contact.ID] = true
@@ -66,6 +69,7 @@ func LookupContact(kademlia *Kademlia, network *Network, target *KademliaID) *Co
 							_, exists := uniqueContacts[*contact.ID]
 							if !exists {
 								contacts = append(contacts, contact)
+								allContacts = append(allContacts, contact)
 								uniqueContacts[*contact.ID] = true
 							}
 						}
@@ -93,7 +97,12 @@ func LookupContact(kademlia *Kademlia, network *Network, target *KademliaID) *Co
 		}()
 	}
 
-	return &bestContact
+	sortContacts(allContacts, target)
+
+	if len(allContacts) < maxCount {
+		maxCount = len(allContacts)
+	}
+	return allContacts[:maxCount]
 }
 
 //func LookupData(kademlia *Kademlia, network *Network, hash [20]byte) []byte {

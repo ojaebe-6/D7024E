@@ -290,9 +290,9 @@ func (network *Network) SendFindContactMessage(contact *Contact, id *KademliaID)
 	}
 }
 
-func (network *Network) SendFindDataMessage(contact *Contact, hash string) (bool, []Contact, []byte) {
+func (network *Network) SendFindDataMessage(contact *Contact, hash [20]byte) (bool, []Contact, []byte) {
 	response := network.SendMessage(contact, MessageFindValue, func(buffer *bytes.Buffer) {
-		buffer.WriteString(hash)
+		buffer.Write(hash[:])
 	})
 
 	if response != nil {

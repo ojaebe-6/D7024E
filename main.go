@@ -20,7 +20,7 @@ func LookupContact(kademlia *Kademlia, network *Network, target *KademliaID, max
 	simultaneousLookups := 3
 	maxLookupsSinceBestFound := 6
 
-	var uniqueContacts map[KademliaID]bool
+	uniqueContacts := make(map[KademliaID]bool)
 
 	//Local lookup
 	contacts := kademlia.LookupContact(target);
@@ -30,7 +30,7 @@ func LookupContact(kademlia *Kademlia, network *Network, target *KademliaID, max
 	sortContactsByTargetDistance(contacts, target)
 
 	allContacts := make([]Contact, len(contacts))
-	copy(contacts, allContacts)
+	copy(allContacts, contacts)
 
 	for _, contact := range contacts {
 		uniqueContacts[*contact.ID] = true

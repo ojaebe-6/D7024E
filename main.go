@@ -208,10 +208,18 @@ func StoreData(kademlia *Kademlia, network *Network, data []byte, replicationFac
 	target := NewKademliaIDFromBytes(hash[:])
 	contacts := LookupContact(kademlia, network, target, replicationFactor)
 
-	for i := 0; i < replicationFactor; i++ {
-		go func(contact *Contact) {
-			network.SendStoreMessage(contact, data)
-		}(&contacts[i])
+	if len(contacts) == 0 {
+		kademlia.Store(data)
+	} else {
+		if len(contacts) < replicationFactor {
+			replicationFactor = len(contacts)
+		}
+
+		for i := 0; i < replicationFactor; i++ {
+			go func(contact *Contact) {
+				network.SendStoreMessage(contact, data)
+			}(&contacts[i])
+		}
 	}
 
 	return hash

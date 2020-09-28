@@ -232,7 +232,7 @@ func (network *Network) SendMessage(contact *Contact, messageType byte, writeDat
 
 	//Await response or timeout
 	startTime := time.Now()
-	for time.Since(startTime).Milliseconds() >= responseTimeout {
+	for time.Since(startTime).Milliseconds() < responseTimeout {
 		response.mutex.RLock()
 		if response.answered {
 			response.mutex.RUnlock()

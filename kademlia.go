@@ -48,6 +48,6 @@ func (kademlia *Kademlia) LookupData(hash [20]byte) []byte {
 func (kademlia *Kademlia) Store(data []byte) [20]byte {
   var hashed_data [20]byte
   copy(kademlia.sha.Sum(data)[:], hashed_data[0:20])
-  kademlia.hash_table[hashed_data] = data
+  kademlia.hash_table[hashed_data] = append([]byte(nil), data...)
   return hashed_data
 }

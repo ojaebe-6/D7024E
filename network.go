@@ -40,17 +40,17 @@ func NewNetwork(kademlia *Kademlia) *Network {
 
 	network := Network{connection:connection, responses:[]*NetworkResponse{}, kademlia:kademlia}
 
+	data := make([]byte, 4096)
 	go func() {
 		for {
-			data := []byte{}
-			_, senderAddress, error := connection.ReadFromUDP(data)
+			length, senderAddress, error := connection.ReadFromUDP(data)
 
 			if error != nil {
 				log.Fatal(error)
 			}
 
 			if len(data) > 0 {
-				network.handleNetworkData(senderAddress, data)
+				network.handleNetworkData(senderAddress, data[:length])
 			}
 		}
 	}()

@@ -117,7 +117,7 @@ func LookupData(kademlia *Kademlia, network *Network, hash [20]byte) []byte {
 	simultaneousLookups := 3
 	maxLookupsSinceBestFound := 6
 
-	var uniqueContacts map[KademliaID]bool
+	uniqueContacts := make(map[KademliaID]bool)
 
 	//Local node lookup
 	contacts := kademlia.LookupContact(target);

@@ -87,20 +87,22 @@ func (network *Network) handleNetworkDataResponse(messageType byte, magicValue u
 	}
 	network.responsesMutex.RUnlock()
 
-	response.mutex.Lock()
-	response.answered = true
-	switch messageType {
-	case ResponseFindNode:
-		response.contacts = dataToContacts(data)
-	case ResponseFindValue:
-		isData := (data[0] == 1)
-		if isData {
-			response.data = data[1:]
-		} else {
-			response.contacts = dataToContacts(data[1:])
+	if response != nil {
+		response.mutex.Lock()
+		response.answered = true
+		switch messageType {
+		case ResponseFindNode:
+			response.contacts = dataToContacts(data)
+		case ResponseFindValue:
+			isData := (data[0] == 1)
+			if isData {
+				response.data = data[1:]
+			} else {
+				response.contacts = dataToContacts(data[1:])
+			}
 		}
+		response.mutex.Unlock()
 	}
-	response.mutex.Unlock()
 }
 
 func (network *Network) handleNetworkDataRequest(senderAddress *net.UDPAddr, messageType byte, magicValue uint64, data []byte) {

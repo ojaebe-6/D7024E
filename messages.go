@@ -6,7 +6,7 @@ const (
 	MessageFindNode = 2
 	MessageFindValue = 3
 	ResponsePing = 4
-	ResponseStore = 1
+	ResponseStore = 5
 	ResponseFindNode = 6
 	ResponseFindValue = 7
 )

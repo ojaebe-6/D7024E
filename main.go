@@ -203,7 +203,7 @@ func LookupData(kademlia *Kademlia, network *Network, hash [20]byte) []byte {
 
 func StoreData(kademlia *Kademlia, network *Network, data []byte, replicationFactor int) [20]byte {
 	var hash [20]byte
-  copy(kademlia.sha.Sum(data)[:], hash[0:20])
+  copy(hash[0:20], kademlia.sha.Sum(data)[:])
 
 	target := NewKademliaIDFromBytes(hash[:])
 	contacts := LookupContact(kademlia, network, target, replicationFactor)

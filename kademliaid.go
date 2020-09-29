@@ -1,8 +1,9 @@
 package main
 
 import (
+	"crypto/rand"
 	"encoding/hex"
-	"math/rand"
+	"log"
 )
 
 // the static number of bytes in a KademliaID
@@ -31,8 +32,10 @@ func NewKademliaIDFromBytes(data []byte) *KademliaID {
 // change this to a better version if you like
 func NewRandomKademliaID() *KademliaID {
 	newKademliaID := KademliaID{}
-	for i := 0; i < IDLength; i++ {
-		newKademliaID[i] = uint8(rand.Intn(256))
+	_, error := rand.Read(newKademliaID[:])
+	if error != nil {
+		log.Fatal("Failed to generate Kademlia ID")
+		return nil
 	}
 	return &newKademliaID
 }

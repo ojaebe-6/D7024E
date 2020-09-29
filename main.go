@@ -54,7 +54,7 @@ func LookupContact(kademlia *Kademlia, network *Network, target *KademliaID, max
 					contact := contacts[0]
 
 					//Remove first element
-					contacts := contacts[1:]
+					contacts = contacts[1:]
 
 					currentLookups++
 					mutex.Unlock()
@@ -158,7 +158,7 @@ func LookupData(kademlia *Kademlia, network *Network, hash [20]byte) []byte {
 					contact := contacts[0]
 
 					//Remove first element
-					contacts := contacts[1:]
+					contacts = contacts[1:]
 
 					currentLookups++
 					mutex.Unlock()

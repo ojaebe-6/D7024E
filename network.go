@@ -141,6 +141,10 @@ func dataToContacts(data []byte) []Contact {
 	contactDataLength := IDLength + ipAddressLength
 	contacts := make([]Contact, len(data) / contactDataLength)
 
+	if (len(data) % contactDataLength) != 0 {
+		log.Fatal("Data to contacts data has incorrect length")
+	}
+
 	for i := 0; i < len(data); i += contactDataLength {
 		id := NewKademliaIDFromBytes(data[i:i + IDLength])
 		address := net.IPv4(data[i + IDLength + 0], data[i + IDLength + 1], data[i + IDLength + 2], data[i + IDLength + 3])

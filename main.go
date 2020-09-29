@@ -97,6 +97,16 @@ func LookupContact(kademlia *Kademlia, network *Network, target *KademliaID, max
 		}()
 	}
 
+	//Wait until go routines are finished
+	for {
+		mutex.Lock()
+		if lookupsSinceBestFound > maxLookupsSinceBestFound || (len(contacts) == 0 && currentLookups == 0) {
+			break
+		}
+		mutex.Unlock()
+		time.Sleep(1)
+	}
+
 	sortContactsByTargetDistance(allContacts, target)
 
 	if len(allContacts) < maxCount {
@@ -196,6 +206,16 @@ func LookupData(kademlia *Kademlia, network *Network, hash [20]byte) []byte {
 				time.Sleep(1)
 			}
 		}()
+	}
+
+	//Wait until go routines are finished
+	for {
+		mutex.Lock()
+		if data != nil || lookupsSinceBestFound > maxLookupsSinceBestFound || (len(contacts) == 0 && currentLookups == 0) {
+			break
+		}
+		mutex.Unlock()
+		time.Sleep(1)
 	}
 
 	return data

@@ -148,7 +148,7 @@ func dataToContacts(data []byte) []Contact {
 	for i := 0; i < len(data); i += contactDataLength {
 		id := NewKademliaIDFromBytes(data[i:i + IDLength])
 		address := net.IPv4(data[i + IDLength + 0], data[i + IDLength + 1], data[i + IDLength + 2], data[i + IDLength + 3])
-		contacts[i] = NewContact(id, address)
+		contacts[i / contactDataLength] = NewContact(id, address)
 	}
 
 	return contacts

@@ -59,12 +59,10 @@ func LookupContact(kademlia *Kademlia, network *Network, target *KademliaID, max
 					currentLookups++
 					mutex.Unlock()
 
-					error, newContacts := network.SendFindContactMessage(&contact, target)
+					success, newContacts := network.SendFindContactMessage(&contact, target)
 					mutex.Lock()
 					currentLookups--
-					if !error {
-						kademlia.AddContact(&contact)
-
+					if success {
 						for _, contact := range newContacts {
 							_, exists := uniqueContacts[*contact.ID]
 							if !exists {
@@ -163,12 +161,10 @@ func LookupData(kademlia *Kademlia, network *Network, hash [20]byte) []byte {
 					currentLookups++
 					mutex.Unlock()
 
-					error, newContacts, newData := network.SendFindDataMessage(&contact, hash)
+					success, newContacts, newData := network.SendFindDataMessage(&contact, hash)
 					mutex.Lock()
 					currentLookups--
-					if !error {
-						kademlia.AddContact(&contact)
-
+					if success {
 						if len(newData) > 0 {
 							if data == nil {
 								data = newData

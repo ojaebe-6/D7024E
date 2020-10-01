@@ -278,7 +278,7 @@ func main() {
 	kademlia := NewKademlia(NewRandomKademliaID())
 	network := NewNetwork(kademlia)
 
-	fmt.Println("Node initalized on port " + strconv.Itoa(standardPort) + "!");
+	fmt.Println("Node " + kademlia.myID.String() + " initalized on port " + strconv.Itoa(standardPort) + "!");
 
 	bootstrap(kademlia, network, os.Args)
 

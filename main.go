@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"fmt"
 	"os"
 	"net"
@@ -219,7 +220,7 @@ func LookupData(kademlia *Kademlia, network *Network, hash [20]byte) []byte {
 
 func StoreData(kademlia *Kademlia, network *Network, data []byte, replicationFactor int) [20]byte {
 	var hash [20]byte
-  copy(hash[0:20], kademlia.sha.Sum(data)[:])
+	copy(hash[0:20], kademlia.sha.Sum(data)[:])
 
 	target := NewKademliaIDFromBytes(hash[:])
 	contacts := LookupContact(kademlia, network, target, replicationFactor)
@@ -277,7 +278,93 @@ func main() {
 	fmt.Println("Node " + kademlia.myID.String() + " initalized on port " + strconv.Itoa(standardPort) + "!");
 
 	bootstrap(kademlia, network, os.Args)
+	CmdInterface(kademlia, network);
+}
 
-	//Sleep forever, work done in goroutines
-	select{}
+func Put(content string, kademlia *Kademlia, network *Network) [20]byte{
+	var hash [20]byte;
+	dataToSend := []byte(content);
+	// Returned Hash value stores in byte slice.
+	hash = StoreData(kademlia, network, dataToSend,5 );
+	fmt.Println(hex.EncodeToString(hash[:]));
+	return hash;
+}
+
+func Get(convertHash string , kademlia *Kademlia, network *Network, isLocal bool){
+	var outStr []byte;
+	var outFixed [20]byte;
+	if(len(convertHash) == 40){
+		outData, err := hex.DecodeString(convertHash);
+		if err != nil {
+			fmt.Println("Failed to get data.");
+		}
+		copy(outFixed[0:20], outData[:]);
+		if(isLocal){
+			outStr = kademlia.LookupData(outFixed);
+
+		}else{
+			outStr = LookupData(kademlia, network, outFixed);
+		}
+		if(outStr == nil){
+			fmt.Println("Empty Data.");
+		} else{
+			fmt.Println(string(outStr));
+		}
+		// fmt.Println("%convert\n", outData);
+	} else{
+		fmt.Println("hex string is not 40 in length.");
+	}
+}
+
+func CmdInterface(kademlia *Kademlia, network *Network) {
+	var in string;
+	lines := "----------------------------------------";
+	var textIn string;
+
+	for (in != "exit") {
+		fmt.Println(lines);
+		fmt.Println("| Node: TEST.\t       |");
+		fmt.Println(lines);
+		fmt.Println("| Options: put | get | getlocal | exit |");
+		fmt.Println(lines);
+		fmt.Print("| Option: ");
+		fmt.Scanln(&in);
+		switch in {
+		case "put":
+			// Store to byte array
+			fmt.Println();
+			fmt.Print("| Add data to be stored: ");
+			fmt.Scanln(&textIn);
+			// because golang just simply works like this, we assign string input to a
+			// byte slice, as for replication Factor, no idea how many copies we want to store.
+			// As for where to use this function, beats me.
+			fmt.Print("| Hash: ")
+			Put(textIn, kademlia, network);
+			fmt.Println();
+			continue;
+		case "get":
+			fmt.Print("| Hash for data: ");
+			fmt.Scanln(&textIn);
+			{
+				fmt.Print("| Output: ")
+				Get(textIn, kademlia, network, false);
+				fmt.Println();
+			}
+			continue;
+
+		case "getlocal":
+			fmt.Print("| Hash for local data: ");
+			fmt.Scanln(&textIn);
+			{
+				fmt.Print("| Output: ")
+				Get(textIn, kademlia, network, true);
+				fmt.Println();
+			}
+			continue;
+
+		case "exit":
+			fmt.Println("Exit");
+			continue;
+		}
+	}
 }
